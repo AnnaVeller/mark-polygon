@@ -11,7 +11,7 @@
 -  `pip install Pillow`
 
 - Для корректного сохранения размеченного изображения: 
-Скачать для своей системы <https://www.ghostscript.com/download/gsdnld.html>
+Скачать для своей системы файл с сайта <https://www.ghostscript.com/download/gsdnld.html>.
 Добавить в переменные среды путь до этого файла + 'bin\'
 
 ***Основной библиотекой является tkinter***

@@ -1,18 +1,15 @@
-## -*- coding: utf-8 -*-
-
 from PIL import Image, ImageTk
-from tkinter import Tk, BOTH, Button, Label, Entry, Canvas, NW, scrolledtext, INSERT, WORD, ALL, Text, SE,\
-    messagebox, N, S, E, W
-from tkinter.ttk import Frame, Label, Style, Combobox
-import os.path
-from tkinter import filedialog as fd
 import json
 import io
 import copy
-from tkinter import messagebox as mb
+import os.path
+from tkinter.ttk import Frame, Label, Combobox
+from tkinter import filedialog as fd
+from tkinter import Tk, Button, Label, Entry, Canvas, NW, scrolledtext, INSERT, WORD, ALL, SE, messagebox, N, S, E, W
 
 
 class Poly:
+
     def __init__(self):
         super().__init__()
         self.color = "black"
@@ -30,24 +27,6 @@ class Poly:
             y = round(y, 5)
             self.cords_percent.append([x, y])
 
-#class ResizingCanvas(Canvas):
-#    def __init__(self, parent, **kwargs):
-#        Canvas.__init__(self, parent, **kwargs)
-#        self.bind("<Configure>", self.on_resize)
-#        self.height = self.winfo_reqheight()
-#        self.width = self.winfo_reqwidth()
-
-#    def on_resize(self, event):
-#        # determine the ratio of old width/height to new width/height
-#        wscale = float(event.width)/self.width
-#        hscale = float(event.height)/self.height
-#        self.width = event.width
-#        self.height = event.height
-#        # resize the canvas
-#        self.config(width=self.width, height=self.height)
-#        # rescale all the objects tagged with the "all" tag
-#        self.scale("all",0,0,wscale,hscale)
-
 
 class Mark(Frame):
 
@@ -55,7 +34,7 @@ class Mark(Frame):
         Frame.__init__(self, parent)
         self.master.title("Разметка текста")
         self.master.resizable(True, True)
-        self.file = None    # Image.open("pic.png")  ImageTk.PhotoImage(self.file)
+        self.file = None
         self.file_initial = None
         self.path_to_file = 'NULL'
         self.tmp_path = 'NULL'
@@ -82,7 +61,7 @@ class Mark(Frame):
 
         self.combo = Combobox()
         self.combo['values'] = ('black', 'white', 'red', 'yellow', 'green', 'blue', 'gray', 'purple', 'cyan', 'lime')
-        self.combo.current(0)  # установите вариант по умолчанию
+        self.combo.current(0)  # установить вариант по умолчанию
         self.combo.grid(column=4, row=5, sticky=N)
         self.lbl3 = Label(text="Set color of polygon")
         self.lbl3.grid(column=4, row=4, sticky=S)
@@ -108,8 +87,8 @@ class Mark(Frame):
             self.lbl2.configure(text=self.path_to_file)
             self.list_poly.clear()
             self.output_poly_cords()
-            self.lbl2.configure(text=self.tmp_path)
-            file = Image.open(self.tmp_path)
+            self.lbl2.configure(text=self.path_to_file)
+            file = Image.open(self.path_to_file)
             self.file_initial = ImageTk.PhotoImage(file)
             file = file.resize((750, 500))
             self.file = ImageTk.PhotoImage(file)
@@ -166,6 +145,7 @@ class Mark(Frame):
         return False, False
 
     def load(self, name):
+        self.tmp_path = name
         format = os.path.splitext(name)[1]
         if format == '.json':
             self.list_poly.clear()
@@ -213,8 +193,11 @@ class Mark(Frame):
     def button_open(self):
         def clicked():
             self.tmp_path = os.path.abspath(self.txt_input.get())
-
-            self.open_image()
+            if os.path.exists(self.tmp_path):
+                self.open_image()
+            else:
+                messagebox.showwarning(title='Предупреждение',
+                                       message='Изображение с именем %s не нашлось' % self.tmp_path)
         btn = Button(width=15, text="Open", bg="lightcyan", command=clicked)
         btn.grid(column=3, row=0, sticky=W, padx=5)
 
@@ -235,7 +218,7 @@ class Mark(Frame):
         name = os.path.splitext(self.path_to_file)[0] + '_mark.jpg'
         answer = False
         if os.path.exists(name):
-            answer = mb.askyesno(title="Вопрос", message="У вас уже есть такое размеченное изображение.\n"
+            answer = messagebox.askyesno(title="Вопрос", message="У вас уже есть такое размеченное изображение.\n"
                                                          "Хотите его перезаписать?")
             if answer == True:
                 img.save(name)
@@ -264,7 +247,7 @@ class Mark(Frame):
         name = os.path.splitext(self.path_to_file)[0] + '.json'
 
         if os.path.exists(name):
-            answer = mb.askyesno(title="Вопрос", message="У вас уже есть такой файл разметки json.\n"
+            answer = messagebox.askyesno(title="Вопрос", message="У вас уже есть такой файл разметки json.\n"
                                                          "Хотите его перезаписать?")
             if answer == True:
                 with open(name, 'w') as f:  # w - перезаписать. a - дозаписать
@@ -300,7 +283,8 @@ class Mark(Frame):
 
     def button_help(self):
         def clicked():
-            stroka = 'Начало осей координат расположено в левом верхнем углу. ' \
+            stroka = 'ФАЙЛЫ ДЛЯ ЗАГРУЗКИ ДОЛЖНЫ ЛЕЖАТЬ В ТОМ ЖЕ МЕСТЕ ГДЕ И КОД\n\n' \
+                     'Начало осей координат расположено в левом верхнем углу. ' \
                      'Шкала [0, 1]\n\n' \
                      '"Choose.." - выбрать фото из галереи \n\n' \
                      '"Open" - открыть фото по указанному пути\n\n' \
@@ -344,26 +328,26 @@ class Mark(Frame):
             name = fd.askopenfilename()
             format = os.path.splitext(name)[1]
             if format == '.json':
-                pic_name_jpg = os.path.splitext(name)[0] + '_mark.jpg'
-                pic_name_png = os.path.splitext(name)[0] + '_mark.png'
+                pic_name_jpg = os.path.splitext(name)[0] + '.jpg'
+                pic_name_png = os.path.splitext(name)[0] + '.png'
                 if os.path.exists(pic_name_jpg):
-                    self.path_to_file = pic_name_jpg
+                    self.tmp_path = pic_name_jpg
                     self.open_image()
                     self.load(name)
                 else:
                     if os.path.exists(pic_name_png):
-                        self.path_to_file = pic_name_png
+                        self.tmp_path = pic_name_png
                         self.open_image()
                         self.load(name)
                     else:
                         messagebox.showwarning(title='Предупреждение',
-                                               message='Изображения с именем %s или %s не нашлись' %(pic_name_jpg,pic_name_png))
-
+                                               message='Изображения с именем %s или %s не нашлись'
+                                                       %(pic_name_jpg,pic_name_png))
             else:
                 if format == '.jpg' or format == '.png':
                     json_name = os.path.splitext(name)[0] + '.json'
                     if os.path.exists(json_name):
-                        self.path_to_file = name
+                        self.tmp_path = name
                         self.open_image()
                         self.load(json_name)
                     else:

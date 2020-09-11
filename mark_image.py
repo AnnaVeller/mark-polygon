@@ -82,6 +82,7 @@ class Mark(Frame):
 
     def open_image(self):
         format = os.path.splitext(self.tmp_path)[1]
+        format = format.lower()
         if format == '.jpg' or format == '.png':
             self.path_to_file = self.tmp_path
             self.lbl2.configure(text=self.path_to_file)

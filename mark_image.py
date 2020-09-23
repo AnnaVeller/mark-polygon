@@ -7,6 +7,9 @@ from tkinter.ttk import Frame, Label, Combobox
 from tkinter import filedialog as fd
 from tkinter import Tk, Button, Label, Entry, Canvas, NW, scrolledtext, INSERT, WORD, ALL, SE, messagebox, N, S, E, W
 
+CANVAS_WIDTH = 800
+CANVAS_HEIGHT = 500
+
 
 class Poly:
 
@@ -21,8 +24,8 @@ class Poly:
     def percent(self):
         self.cords_percent.clear()
         for i in range(len(self.cords)):
-            x = self.cords[i][0]/750
-            y = self.cords[i][1]/500
+            x = self.cords[i][0]/CANVAS_WIDTH
+            y = self.cords[i][1]/CANVAS_HEIGHT
             x = round(x, 5)
             y = round(y, 5)
             self.cords_percent.append([x, y])
@@ -46,7 +49,7 @@ class Mark(Frame):
         self.fst_point = [0, 0]
         self.sec_point = [0, 0]
 
-        self.c = Canvas(width=750, height=500, bg="white")
+        self.c = Canvas(width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bg="white")
         self.c.grid(column=0, row=2, columnspan=4, rowspan=4, sticky=N + S + W + E)
 
         self.lbl = Label(text="Polygons:")
@@ -91,7 +94,7 @@ class Mark(Frame):
             self.lbl2.configure(text=self.path_to_file)
             file = Image.open(self.path_to_file)
             self.file_initial = ImageTk.PhotoImage(file)
-            file = file.resize((750, 500))
+            file = file.resize((CANVAS_WIDTH, CANVAS_HEIGHT))
             self.file = ImageTk.PhotoImage(file)
             self.c.create_image(0, 0, image=self.file, anchor=NW)
         else:

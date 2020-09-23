@@ -7,8 +7,9 @@ from tkinter.ttk import Frame, Label, Combobox
 from tkinter import filedialog as fd
 from tkinter import Tk, Button, Label, Entry, Canvas, NW, scrolledtext, INSERT, WORD, ALL, SE, messagebox, N, S, E, W
 
-CANVAS_WIDTH = 800
-CANVAS_HEIGHT = 500
+# Please not less than 480x480
+CANVAS_WIDTH = 480
+CANVAS_HEIGHT = 480
 
 
 class Poly:
@@ -21,14 +22,21 @@ class Poly:
         self.name = "NULL"
         self.end = False    #дорисован ли полигон
 
-    def percent(self):
+    def to_rel_cords(self):     # переводит координаты канваса в относительные
         self.cords_percent.clear()
         for i in range(len(self.cords)):
-            x = self.cords[i][0]/CANVAS_WIDTH
-            y = self.cords[i][1]/CANVAS_HEIGHT
+            x = self.cords[i][0] / CANVAS_WIDTH
+            y = self.cords[i][1] / CANVAS_HEIGHT
             x = round(x, 5)
             y = round(y, 5)
             self.cords_percent.append([x, y])
+
+    def to_real_cords(self):  # переводит относительные координаты в координаты канваса
+        self.cords.clear()
+        for c in self.cords_percent:
+            x = c[0] * CANVAS_WIDTH
+            y = c[1] * CANVAS_HEIGHT
+            self.cords.append([x, y])
 
 
 class Mark(Frame):
@@ -79,10 +87,6 @@ class Mark(Frame):
 
         self.ui()
 
-    def line(self):
-        self.c.create_line(208, 416, 208, 0, dash=(2, 2))
-        self.c.create_line(0, 208, 416, 208, dash=(2, 2))
-
     def open_image(self):
         format = os.path.splitext(self.tmp_path)[1]
         format = format.lower()
@@ -107,7 +111,6 @@ class Mark(Frame):
         rel_cords = []
         lst = self.list_poly
         for i in range(len(lst)):
-            #lst[i].percent()
             cords.append(lst[i].cords)
             colors.append(lst[i].color)
             rel_cords.append(lst[i].cords_percent)
@@ -130,7 +133,7 @@ class Mark(Frame):
         stroka = ''
 
         for i in range(len(lst)):
-            lst[i].percent()
+            lst[i].to_rel_cords()
             stroka = stroka + '%d %s ' % (i+1, lst[i].color) + str(lst[i].cords_percent) + 2 * '\n'
         self.txt_cords.delete("1.0", "end")
         self.txt_cords.insert(INSERT, stroka)
@@ -155,10 +158,11 @@ class Mark(Frame):
             self.list_poly.clear()
             with open(name) as f:
                 cords = json.load(f)
-            for i in range(len(cords['coordinates'])):
+            for i in range(len(cords["relative coordinates"])):
                 poly = Poly()
                 poly.name = i
-                poly.cords = cords['coordinates'][i]
+                poly.cords_percent = cords["relative coordinates"][i]
+                poly.to_real_cords()
                 poly.color = cords['color'][i]
                 poly.end = True
                 self.list_poly.append(copy.copy(poly))
@@ -224,7 +228,7 @@ class Mark(Frame):
         if os.path.exists(name):
             answer = messagebox.askyesno(title="Вопрос", message="У вас уже есть такое размеченное изображение.\n"
                                                          "Хотите его перезаписать?")
-            if answer == True:
+            if answer:
                 img.save(name)
         else:
             img.save(name)
@@ -241,7 +245,6 @@ class Mark(Frame):
         rel_cords = []
         lst = self.list_poly
         for i in range(len(lst)):
-            #lst[i].percent()
             cords.append(lst[i].cords)
             colors.append(lst[i].color)
             rel_cords.append(lst[i].cords_percent)
@@ -253,7 +256,7 @@ class Mark(Frame):
         if os.path.exists(name):
             answer = messagebox.askyesno(title="Вопрос", message="У вас уже есть такой файл разметки json.\n"
                                                          "Хотите его перезаписать?")
-            if answer == True:
+            if answer:
                 with open(name, 'w') as f:  # w - перезаписать. a - дозаписать
                     json.dump(to_json, f)
         else:
@@ -401,7 +404,7 @@ class Mark(Frame):
             self.prev_x = None
             self.prev_y = None
             object_poly.end = True
-            news_cords = '%d %s ' % (object_poly.name, object_poly.color) + str(object_poly.cords) + 2*'\n'
+            #news_cords = '%d %s ' % (object_poly.name, object_poly.color) + str(object_poly.cords) + 2*'\n'
             self.output_poly_cords()
 
         else:
@@ -426,6 +429,7 @@ class Mark(Frame):
         self.master.title(s)
 
     def change(self, event):
+
         def output_cords(event):
             self.output_poly_cords()
             x1 = event.x
@@ -440,6 +444,7 @@ class Mark(Frame):
                 del poly.cords[j]
                 poly.cords.insert(j, [x1, y1])
                 self.poly_draw()
+
         x = event.x
         y = event.y
         r = 4
@@ -449,13 +454,14 @@ class Mark(Frame):
             poly = self.list_poly[i_poly]
         else:
             poly = False
-        #self.c.create_oval(x - r, y - r, x + r, y + r, width=2, outline='antiquewhite')
+
         if poly:
             del poly.cords[j]
             poly.cords.insert(j, [x, y])
             self.poly_draw()
             self.c.bind('<ButtonRelease-3>', output_cords)
-            #self.c.create_oval(x - r, y - r, x + r, y + r, width=2, outline=poly.color)
+
+        poly.to_rel_cords()
 
     def del_point(self, event):
         x = event.x
